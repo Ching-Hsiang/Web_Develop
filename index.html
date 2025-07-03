@@ -1,11 +1,160 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+    <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>迷你 TradingView with Indicators</title>
+  <!-- Tailwind CSS for quick styling -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <!-- Lightweight‑Charts core library -->
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    body { background: #f8f9fa; }
+    .time-btn { @apply px-2 py-1 text-xs rounded hover:bg-gray-200; }
+    .ind-btn { @apply px-2 py-1 text-xs rounded bg-indigo-100 hover:bg-indigo-200; }
+  </style>
 </head>
-<body>
-    
+<body class="h-screen flex flex-col select-none">
+  <!-- ===== Header ===== -->
+  <header class="flex items-center justify-between px-4 py-2 bg-white shadow-sm space-x-4">
+    <!-- Symbol / Price -->
+    <div class="flex items-center space-x-3">
+      <input id="symbol" value="AAPL" class="border rounded px-2 py-1 w-24 text-center" />
+      <span id="price" class="text-lg font-semibold">--</span>
+    </div>
+
+    <!-- Time‑frame buttons -->
+    <div class="flex items-center space-x-1">
+      <button class="time-btn" data-period="1D">1D</button>
+      <button class="time-btn" data-period="5D">5D</button>
+      <button class="time-btn" data-period="1M">1M</button>
+      <button class="time-btn" data-period="6M">6M</button>
+      <button class="time-btn" data-period="1Y">1Y</button>
+      <button class="time-btn" data-period="ALL">ALL</button>
+    </div>
+
+    <!-- Indicator buttons -->
+    <div class="flex items-center space-x-2">
+      <button class="ind-btn" data-ind="sma20">SMA&nbsp;20</button>
+      <button class="ind-btn" data-ind="ema50">EMA&nbsp;50</button>
+      <button class="ind-btn" data-ind="bbands">Bollinger</button>
+      <button id="clear-ind" class="px-2 py-1 text-xs rounded bg-red-100 hover:bg-red-200">Clear</button>
+    </div>
+  </header>
+
+  <!-- ===== Chart Area ===== -->
+  <main class="flex-1 relative bg-white">
+    <div id="chart" class="absolute inset-0"></div>
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="text-xs text-gray-500 text-center py-1 bg-white shadow-inner">
+    Powered by <a href="https://github.com/tradingview/lightweight-charts" target="_blank" class="underline">Lightweight Charts</a>
+  </footer>
+
+  <!-- ===== External indicator script ===== -->
+  <script type="module" src="indicators.js"></script>
+
+  <!-- ===== Main logic (ES‑Module) ===== -->
+  <script type="module">
+    import { calcSMA, calcEMA, calcBB } from './indicators.js';
+
+    /* ---------- Chart init ---------- */
+    const container = document.getElementById('chart');
+    const chart = LightweightCharts.createChart(container, {
+      layout: { background: { color: '#ffffff' }, textColor: '#333' },
+      grid: { vertLines: { color: '#eeeeee' }, horzLines: { color: '#eeeeee' } },
+      timeScale: { borderColor: '#eeeeee' },
+      rightPriceScale: { borderColor: '#eeeeee' },
+      width: container.clientWidth,
+      height: container.clientHeight,
+    });
+
+    const candleSeries = chart.addCandlestickSeries({
+      upColor: '#26a69a',
+      downColor: '#ef5350',
+      borderVisible: false,
+      wickUpColor: '#26a69a',
+      wickDownColor: '#ef5350',
+    });
+
+    const volumeSeries = chart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: '', overlay: true });
+
+    let rawCandles = [];
+    let activeSeries = [];
+
+    /* ---------- Indicator helpers ---------- */
+    function clearIndicators() {
+      activeSeries.forEach(s => chart.removeSeries(s));
+      activeSeries = [];
+    }
+
+    function showIndicator(name) {
+      clearIndicators();
+      switch (name) {
+        case 'sma20': {
+          const sma = calcSMA(rawCandles, 20);
+          const s = chart.addLineSeries({ color: '#ff9800', lineWidth: 2 });
+          s.setData(sma);
+          activeSeries.push(s);
+          break;
+        }
+        case 'ema50': {
+          const ema = calcEMA(rawCandles, 50);
+          const s = chart.addLineSeries({ color: '#2962ff', lineWidth: 2, lineType: 1 });
+          s.setData(ema);
+          activeSeries.push(s);
+          break;
+        }
+        case 'bbands': {
+          const bb = calcBB(rawCandles, 20, 2);
+          const upper = chart.addLineSeries({ color: 'rgba(38,166,154,0.8)', lineWidth: 1 });
+          upper.setData(bb.upper);
+          const lower = chart.addLineSeries({ color: 'rgba(239,83,80,0.8)', lineWidth: 1 });
+          lower.setData(bb.lower);
+          const middle = chart.addLineSeries({ color: 'rgba(0,0,0,0.4)', lineWidth: 1, lineStyle: 2 });
+          middle.setData(bb.middle);
+          activeSeries.push(upper, lower, middle);
+          break;
+        }
+      }
+    }
+
+    /* ---------- Bind UI ---------- */
+    document.querySelectorAll('.ind-btn').forEach(btn =>
+      btn.addEventListener('click', () => showIndicator(btn.dataset.ind))
+    );
+    document.getElementById('clear-ind').addEventListener('click', clearIndicators);
+    window.addEventListener('resize', () => chart.applyOptions({ width: container.clientWidth, height: container.clientHeight }));
+
+    /* ---------- Fetch / render candles (demo) ---------- */
+    fetchCandles('AAPL').then(data => {
+      rawCandles = data;
+      candleSeries.setData(
+        rawCandles.map(d => ({ time: d.time, open: d.open, high: d.high, low: d.low, close: d.close }))
+      );
+      volumeSeries.setData(
+        rawCandles.map(d => ({ time: d.time, value: d.volume, color: d.open > d.close ? 'rgba(239,83,80,0.7)' : 'rgba(38,166,154,0.7)' }))
+      );
+    });
+
+    /* ---------- Demo data generator ---------- */
+    async function fetchCandles(symbol) {
+      const now = Math.floor(Date.now() / 1000);
+      const day = 86400;
+      const candles = [];
+      let price = 150;
+      for (let i = 0; i < 365; i++) {
+        const open = price;
+        const close = open + (Math.random() - 0.5) * 4;
+        const high = Math.max(open, close) + Math.random() * 2;
+        const low = Math.min(open, close) - Math.random() * 2;
+        const volume = Math.random() * 1_000_000 + 500_000;
+        candles.unshift({ time: now - i * day, open, high, low, close, volume });
+        price = close;
+      }
+      return candles;
+    }
+  </script>
 </body>
 </html>
