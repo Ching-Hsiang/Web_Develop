@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K 線 + 指標</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <h1>K 線 + 指標</h1>
+
+  <div id="toolbar">
+    <fieldset>
+      <legend>技術指標</legend>
+      <label><input type="checkbox" class="ind-toggle" value="MA"> MA(5/10/20)</label>
+      <label><input type="checkbox" class="ind-toggle" value="MACD"> MACD</label>
+      <label><input type="checkbox" class="ind-toggle" value="STOCH"> KD</label>
+      <label><input type="checkbox" class="ind-toggle" value="WILLR"> Williams%R</label>
+      <label><input type="checkbox" class="ind-toggle" value="BIAS"> BIAS</label>
+      <label><input type="checkbox" class="ind-toggle" value="MOM"> Momentum</label>
+      <label><input type="checkbox" class="ind-toggle" value="DMI"> DMI/ADX</label>
+      <label><input type="checkbox" class="ind-toggle" value="BOLL"> Bollinger</label>
+      <label><input type="checkbox" class="ind-toggle" value="RSI"> RSI</label>
+      <label><input type="checkbox" class="ind-toggle" value="STOCHRSI"> StochRSI</label>
+      <label><input type="checkbox" class="ind-toggle" value="PSAR"> PSAR</label>
+      <label><input type="checkbox" class="ind-toggle" value="MTMOSC"> MTM Osc</label>
+      <label><input type="checkbox" class="ind-toggle" value="CPR"> CPR/Pivot</label>
+      <label><input type="checkbox" class="ind-toggle" value="QSTICK"> QStick</label>
+      <label><input type="checkbox" class="ind-toggle" value="CCI"> CCI</label>
+      <label><input type="checkbox" class="ind-toggle" value="ARBR"> AR/BR</label>
+      <label><input type="checkbox" class="ind-toggle" value="ADL"> ADL</label>
+    </fieldset>
+  </div>
+
+  <div id="chart-container">
+    <canvas id="mainChart"></canvas>
+  </div>
+
+  <!-- 資料 -->
+  <script src="data.js"></script>
+
+  <!-- 指標計算 -->
+  <script src="indicators/ma.js"></script>
+  <script src="indicators/bias.js"></script>
+  <script src="indicators/momentum.js"></script>
+  <script src="indicators/macd.js"></script>
+  <script src="indicators/stochastic.js"></script>
+  <script src="indicators/williamsR.js"></script>
+  <script src="indicators/dmi.js"></script>
+  <script src="indicators/bollinger.js"></script>
+  <script src="indicators/rsi.js"></script>
+  <script src="indicators/stochrsi.js"></script>
+  <script src="indicators/psar.js"></script>
+  <script src="indicators/mtmOsc.js"></script>
+  <script src="indicators/cprPivot.js"></script>
+  <script src="indicators/qstick.js"></script>
+  <script src="indicators/cci.js"></script>
+  <script src="indicators/arbr.js"></script>
+  <script src="indicators/adl.js"></script>
+
+  <!-- 單圖繪製 -->
+  <script src="chart.js"></script>
+</body>
+</html>
